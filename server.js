@@ -2,7 +2,7 @@ const express = require('express');
 const { CosmosClient } = require('@azure/cosmos');
 
 const app = express();
-const port = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3001; // CRITICAL: Use Azure's PORT
 
 // Middleware
 app.use(require('cors')());
@@ -40,7 +40,7 @@ app.get('/products/:id', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Product service running on port ${port}`);
+// Start server - MUST use 0.0.0.0 for Azure
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
 });
