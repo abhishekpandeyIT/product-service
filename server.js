@@ -1,21 +1,36 @@
+require('dotenv').config();
 const express = require('express');
 const { CosmosClient } = require('@azure/cosmos');
 
 const app = express();
-const PORT = process.env.PORT || 3001; // CRITICAL: Use Azure's PORT
+const PORT = process.env.PORT || 3001;
+
+// Validate environment variables
+if (!process.env.COSMOS_DB_CONNECTION_STRING) {
+  console.error('Missing COSMOS_DB_CONNECTION_STRING environment variable');
+  process.exit(1);
+}
+
+// Initialize Cosmos DB with error handling
+let container;
+try {
+  const cosmosClient = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING);
+  const database = cosmosClient.database(process.env.COSMOS_DB_NAME || 'ecommerce-db');
+  container = database.container(process.env.COSMOS_DB_CONTAINER || 'products');
+  console.log('Cosmos DB initialized successfully');
+} catch (err) {
+  console.error('Cosmos DB initialization failed:', err);
+  process.exit(1);
+}
 
 // Middleware
 app.use(require('cors')());
 app.use(express.json());
 
-// Cosmos DB Connection
-const cosmosClient = new CosmosClient(process.env.COSMOS_DB_CONNECTION_STRING);
-const container = cosmosClient.database(process.env.COSMOS_DB_NAME).container(process.env.COSMOS_DB_CONTAINER);
-
-// Health Check
+// Health check
 app.get('/', (req, res) => res.send('Product Service is running'));
 
-// API Routes
+// Products endpoint
 app.get('/products', async (req, res) => {
   try {
     const { resources } = await container.items.query('SELECT * FROM c').fetchAll();
@@ -42,5 +57,5 @@ app.get('/products/:id', async (req, res) => {
 
 // Start server - MUST use 0.0.0.0 for Azure
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
